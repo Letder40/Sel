@@ -1,0 +1,27 @@
+{
+  "name": "wherec",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "type": "es2022",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [
+    "sql",
+    "filter",
+    "compiler"
+  ],
+  "author": "Letder40",
+  "license": "ISC",
+  "devDependencies": {
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  },
+  "allowScripts": {
+    "tsx@4.23.12": true
+  },
+  "dependencies": {
+    "lrustlike": "^3.0.2"
+  }
+}
