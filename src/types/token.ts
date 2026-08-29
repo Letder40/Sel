@@ -1,62 +1,39 @@
-import { Operation } from "./operation"
+export type Operation =
+  | "SEARCH"
+  | "EQUALS"
+  | "NOT EQUALS"
+  | "LESSER EQUALS"
+  | "LESSER"
+  | "GREATER"
+  | "GREATER EQUALS"
 
-export type Token =
-  | {
-    token: "OR"
-    starts: number
-    ends: number
-    value: string
-  } | {
-    token: "XOR"
-    starts: number
-    ends: number
-    value: string
-  } | {
-    token: "AND"
-    starts: number
-    ends: number
-    value: string
-  } | {
-    token: "NOT"
-    starts: number
-    ends: number
-    value: string
-  } | {
-    token: "OPEN BRACE"
-    starts: number
-    ends: number
-    value: string
-  } | {
-    token: "CLOSE BRACE"
-    starts: number
-    ends: number
-    value: string
-  } | {
-    token: "OPEN QUOTE"
-    starts: number
-    ends: number
-    value: string
-  } | {
-    token: "CLOSE QUOTE"
-    starts: number
-    ends: number
-    value: string
-  } | {
-    token: Operation
-    starts: number
-    ends: number
-    value: string
-  } | {
-    token: "STRING"
-    starts: number
-    ends: number
-    value: string
-  } | {
-    token: "NUMBER"
-    starts: number
-    ends: number
-    value: string
-  }
+export type LogicOperation =
+  | "OR"
+  | "XOR"
+  | "AND"
+  | "NOT"
+
+export type Primitive =
+  | "STRING"
+  | "NUMBER"
+
+export type Syntax =
+  | "OPEN PAREN"
+  | "CLOSE PAREN"
+  | "KEY"
+
+export type TokenType =
+  | Syntax
+  | Primitive
+  | LogicOperation
+  | Operation
+
+export type Token = {
+  token: TokenType,
+  starts: number,
+  ends: number,
+  value: string
+}
 
 export const Token =
 (token: Token["token"],

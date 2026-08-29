@@ -1,35 +1,28 @@
-import { None, Option } from "lrustlike/option"
-import { Operation } from "./operation"
+import { LogicOperation, Operation } from "./token.js"
+
+type BinaryOperation =
+  | Exclude<LogicOperation, "NOT">
+  | Operation
 
 export type AstNode =
   | {
-    token: "OR"
-    precedency: 0
-    left: Option<AstNode>
-    right: Option<AstNode>
-  } | {
-    token: "XOR"
-    precedency: 1
-    left: Option<AstNode>
-    right: Option<AstNode>
-  } | {
-    token: "AND"
-    precedency: 2
-    left: Option<AstNode>
-    right: Option<AstNode>
-  } | {
-    token: Operation
-    precedency: 3
-    left: Option<AstNode>
-    right: Option<AstNode>
-  } | {
+    token: BinaryOperation
+    left: AstNode
+    right: AstNode
+  }
+  | {
     token: "NOT"
-    precedency: 4
-    left: Option<AstNode>
-    right: Option<AstNode>
-  } | {
-    token: "PRIMITIVE"
-    precedency: 4
-    left: None
-    right: None
+    value: AstNode
+  }
+  | {
+    token: "KEY"
+    value: string
+  }
+  | {
+    token: "STRING"
+    value: string
+  }
+  | {
+    token: "NUMBER"
+    value: number
   }
