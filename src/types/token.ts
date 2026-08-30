@@ -1,5 +1,7 @@
 export type Operation =
-  | "SEARCH"
+  | "INCLUDES"
+  | "STARTS"
+  | "ENDS"
   | "EQUALS"
   | "NOT EQUALS"
   | "LESSER EQUALS"
@@ -17,31 +19,41 @@ export type Primitive =
   | "STRING"
   | "NUMBER"
 
+export type Modifier =
+  | "YEAR"
+  | "MONTH"
+  | "DAY"
+
 export type Syntax =
+  | "KEY"
   | "OPEN PAREN"
   | "CLOSE PAREN"
-  | "KEY"
 
 export type TokenType =
   | Syntax
   | Primitive
+  | Modifier
   | LogicOperation
   | Operation
 
+export type TokenOf<T extends TokenType> = {
+  type: T;
+  starts: number;
+  ends: number;
+  value: string;
+};
+
 export type Token = {
-  token: TokenType,
-  starts: number,
-  ends: number,
-  value: string
-}
+  [T in TokenType]: TokenOf<T>
+}[TokenType];
 
 export const Token =
-(token: Token["token"],
+(token: Token["type"],
  starts: number,
  ends: number,
  value: string
 ) => ({
-  token,
+  type: token,
   starts,
   ends,
   value
