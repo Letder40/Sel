@@ -2,72 +2,72 @@ import { TokenType } from "../types/token.js"
 
 export type OperatorInfo = {
   precedence: number
-  type: "unary" | "binary"
+  type: "logic unary" | "logic binary" | "operator"
 }
 
 export const OPERATOR_INFO = new Map<TokenType, OperatorInfo>([
   ["OR", {
     precedence: 0,
-    type: "binary",
+    type: "logic binary",
   }],
 
   ["XOR", {
     precedence: 1,
-    type: "binary",
+    type: "logic binary",
   }],
 
   ["AND", {
     precedence: 2,
-    type: "binary",
+    type: "logic binary",
   }],
 
   ["NOT", {
     precedence: 3,
-    type: "unary",
+    type: "logic unary",
   }],
 
   ["EQUALS", {
     precedence: 4,
-    type: "binary",
+    type: "operator",
   }],
 
   ["NOT EQUALS", {
     precedence: 4,
-    type: "binary",
+    type: "operator",
   }],
 
   ["LESSER", {
     precedence: 4,
-    type: "binary",
+    type: "operator",
   }],
 
   ["LESSER EQUALS", {
     precedence: 4,
-    type: "binary",
+    type: "operator",
   }],
 
   ["GREATER", {
     precedence: 4,
-    type: "binary",
+    type: "operator",
   }],
 
   ["GREATER EQUALS", {
     precedence: 4,
-    type: "binary",
+    type: "operator",
   }],
 
   ["INCLUDES", {
     precedence: 4,
-    type: "binary",
+    type: "operator",
   }],
 
   ["STARTS", {
     precedence: 4,
-    type: "binary",
+    type: "operator",
   }],
 
   ["ENDS", {
     precedence: 4,
-    type: "binary",
+    type: "operator",
   }],
 ])

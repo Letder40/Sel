@@ -49,7 +49,7 @@ describe("Parser", () => {
     expect(parse("edad >= 18"))
       .toEqual({
         token: token("GREATER EQUALS", 5, 7, ">="),
-        type: "binary",
+        type: "operation",
         left: { token: token("KEY", 0, 4, "edad"), type: "key", value: "edad" },
         right: { token: token("NUMBER", 8, 10, "18"), type: "primitive", value: 18 },
       })
@@ -58,11 +58,11 @@ describe("Parser", () => {
   test("gives AND precedence over OR", () => {
     expect(parse("a OR b AND c")).toEqual({
       token: token("OR", 2, 4, "OR"),
-      type: "binary",
+      type: "logic binary",
       left: { token: token("KEY", 0, 1, "a"), type: "key", value: "a" },
       right: {
         token: token("AND", 7, 10, "AND"),
-        type: "binary",
+        type: "logic binary",
         left: { token: token("KEY", 5, 6, "b"), type: "key", value: "b" },
         right: { token: token("KEY", 11, 12, "c"), type: "key", value: "c" },
       },
@@ -72,10 +72,10 @@ describe("Parser", () => {
   test("associates repeated left-associative operators to the left", () => {
     expect(parse("a OR b OR c")).toEqual({
       token: token("OR", 7, 9, "OR"),
-      type: "binary",
+      type: "logic binary",
       left: {
         token: token("OR", 2, 4, "OR"),
-        type: "binary",
+        type: "logic binary",
         left: { token: token("KEY", 0, 1, "a"), type: "key", value: "a" },
         right: { token: token("KEY", 5, 6, "b"), type: "key", value: "b" },
       },
@@ -83,10 +83,10 @@ describe("Parser", () => {
     });
   });
 
-  test("parses the unary NOT operator", () => {
+  test("parses the logic unary NOT operator", () => {
     expect(parse("NOT active")).toEqual({
       token: token("NOT", 0, 3, "NOT"),
-      type: "unary",
+      type: "logic unary",
       value: { token: token("KEY", 4, 10, "active"), type: "key", value: "active" },
     })
   });
@@ -94,13 +94,13 @@ describe("Parser", () => {
   test("binds NOT to comparisons before combining logical expressions", () => {
     expect(parse("NOT age >= 18 AND active")).toEqual({
       token: token("AND", 14, 17, "AND"),
-      type: "binary",
+      type: "logic binary",
       left: {
         token: token("NOT", 0, 3, "NOT"),
-        type: "unary",
+        type: "logic unary",
         value: {
           token: token("GREATER EQUALS", 8, 10, ">="),
-          type: "binary",
+          type: "operation",
           left: { token: token("KEY", 4, 7, "age"), type: "key", value: "age" },
           right: { token: token("NUMBER", 11, 13, "18"), type: "primitive", value: 18 },
         },
@@ -111,12 +111,12 @@ describe("Parser", () => {
 
   test("gives AND precedence over XOR and XOR precedence over OR", () => {
     expect(parse("a OR b XOR c AND d")).toMatchObject({
-      type: "binary",
+      type: "logic binary",
       token: { type: "OR" },
       right: {
-        type: "binary",
+        type: "logic binary",
         token: { type: "XOR" },
-        right: { type: "binary", token: { type: "AND" } },
+        right: { type: "logic binary", token: { type: "AND" } },
       },
     });
   });
@@ -144,10 +144,10 @@ describe("Parser", () => {
   test("uses parentheses to override precedence", () => {
     expect(parse("(a OR b) AND c")).toEqual({
       token: token("AND", 9, 12, "AND"),
-      type: "binary",
+      type: "logic binary",
       left: {
         token: token("OR", 3, 5, "OR"),
-        type: "binary",
+        type: "logic binary",
         left: { token: token("KEY", 1, 2, "a"), type: "key", value: "a" },
         right: { token: token("KEY", 6, 7, "b"), type: "key", value: "b" },
       },
@@ -161,7 +161,7 @@ describe("Parser", () => {
       expected: "complete AST",
       ast: {
         token: token("OR", 2, 4, "OR"),
-        type: "binary",
+        type: "logic binary",
         left: { token: token("KEY", 0, 1, "a"), type: "key", value: "a" },
         right: { token: token("KEY", 5, 6, "b"), type: "key", value: "b" },
       }
@@ -171,10 +171,10 @@ describe("Parser", () => {
   test("informs about missing nodes", () => {
     expect(parse("(a OR ) AND c")).toEqual({
       token: token("AND", 8, 11, "AND"),
-      type: "binary",
+      type: "logic binary",
       left: {
         token: token("OR", 3, 5, "OR"),
-        type: "binary",
+        type: "logic binary",
         left: { token: token("KEY", 1, 2, "a"), type: "key", value: "a" },
         right: { type: "expected", expected: "node" },
       },
@@ -183,14 +183,14 @@ describe("Parser", () => {
 
     expect(parse("AND c")).toEqual({
       token: token("AND", 0, 3, "AND"),
-      type: "binary",
+      type: "logic binary",
       left: { type: "expected", expected: "node" },
       right: { token: token("KEY", 4, 5, "c"), type: "key", value: "c" },
     });
 
     expect(parse("a AND ")).toEqual({
       token: token("AND", 2, 5, "AND"),
-      type: "binary",
+      type: "logic binary",
       left: { token: token("KEY", 0, 1, "a"), type: "key", value: "a" },
       right: { type: "expected", expected: "node" },
     });

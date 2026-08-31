@@ -1,25 +1,26 @@
 import { Option } from "lrustlike/option"
 import { LogicOperation, Modifier, Operation, Token } from "./token.js"
 
-export type UnaryOperation = "NOT"
-
-export type BinaryOperation =
-  Exclude<
-    LogicOperation | Operation,
-    UnaryOperation
-  >
+export type UnaryLogicOperation = "NOT"
+export type BinaryLogicOperation = Exclude<LogicOperation, UnaryLogicOperation>
 
 export type AstNode =
   | {
-    token: Token & { type: BinaryOperation }
-    type: "binary"
+    token: Token & { type: BinaryLogicOperation }
+    type: "logic binary"
     left: AstNode
     right: AstNode
   }
   | {
-    token: Token & { type: UnaryOperation }
-    type: "unary"
+    token: Token & { type: UnaryLogicOperation }
+    type: "logic unary"
     value: AstNode
+  }
+  | {
+    token: Token & { type: Operation }
+    type: "operation"
+    left: AstNode
+    right: AstNode
   }
   | {
     token: Token & { type: "KEY" }
