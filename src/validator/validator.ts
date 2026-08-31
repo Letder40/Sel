@@ -18,54 +18,7 @@ export class Validator  {
     this.ast = ast;
   }
 
-  private handleExpectedChild(
-    parent: AstNode & { type: "operation" | "logic binary" | "logic unary" | "modifier"},
-    child: AstNode & { type: "expected" }
-  ) {
-
-    let message: string;
-    switch (child.expected) {
-      case "primitive":
-        message = `expected primitive value`
-        break;
-
-      case "closed paren":
-        if (child.found.isSome()) {
-          message = `expected closing parenthesis, but found: ${child.found.value.value}`
-        } else {
-          message = `expected closing parenthesis`
-        }
-        break;
-
-      case "node":
-        message = `expected another operand`
-        break;
-
-      case "complete AST":
-        throw new Error("An uncomplete AST marker cannot be used as a child node");
-    }
-
-    this.errors.push({
-      type: "expected value",
-      message: message,
-      context: {
-        starts: parent.token.starts,
-        ends: parent.token.ends,
-      }
-    })
-  }
-
   private validateOperation(ast: AstNode & { type: "operation"}) {
-    if (ast.left.type === "expected") {
-      this.handleExpectedChild(ast, ast.left)
-      return
-    }
-
-    if (ast.right.type === "expected") {
-      this.handleExpectedChild(ast, ast.right)
-      return
-    }
-
     if (ast.left.type !== "key") this.errors.push({
       type: "syntax error",
       message: `expected a key, but got ${ast.left.token.value}`,
@@ -86,11 +39,6 @@ export class Validator  {
   }
 
   private validateModifier(ast: AstNode & { type: "modifier"}) {
-    if (ast.modifies.type === "expected") {
-      this.handleExpectedChild(ast, ast.modifies)
-      return
-    }
-
     if (ast.modifies.type !== "primitive") this.errors.push({
       type: "syntax error",
       message: `modifiers can only modify a value; ${ast.modifies.token.value} cannot be modified.`,
@@ -102,11 +50,6 @@ export class Validator  {
   }
 
   private validateNot(ast: AstNode & { type: "logic unary"}) {
-    if (ast.value.type === "expected") {
-      this.handleExpectedChild(ast, ast.value)
-      return
-    }
-
     if (
       ast.value.type === "key"
       || ast.value.type === "primitive"
@@ -122,15 +65,6 @@ export class Validator  {
   }
 
   private validateLogicOperation(ast: AstNode & { type: "logic binary"}) {
-    if (ast.left.type === "expected") {
-      this.handleExpectedChild(ast, ast.left)
-      return
-    }
-    if (ast.right.type === "expected") {
-      this.handleExpectedChild(ast, ast.right)
-      return
-    }
-
     if (
       ast.left.type === "key"
       || ast.left.type === "primitive"
@@ -159,7 +93,7 @@ export class Validator  {
   }
 
   private validateBranch(ast: AstNode = this.ast) {
-    if (ast.type === "primitive" || ast.type === "key" || ast.type === "expected") {
+    if (ast.type === "primitive" || ast.type === "key") {
       return;
     }
 
@@ -192,19 +126,19 @@ export class Validator  {
 
   public validate(): Result<AstNode, ValidationError[]> {
     this.errors = []
-    let ast = this.ast
 
-    if (ast.type === "expected" && ast.expected === "complete AST") {
-      this.errors.push({
-        type: "syntax error",
-        message: `Unknown syntax error; check the syntax`,
-      })
-      ast = ast.ast;
-    }
+    if (this.ast.type === "key") return Err([{
+      type: "expected operation",
+      message: `${this.ast.token.value} expects a operator`,
+      context: {
+        starts: this.ast.token.starts,
+        ends: this.ast.token.ends,
+      }
+    }])
 
-    this.validateBranch(ast)
+    this.validateBranch(this.ast)
 
     if (this.errors.length > 0) return Err(this.errors)
-    return Ok(ast)
+    return Ok(this.ast)
   }
 }

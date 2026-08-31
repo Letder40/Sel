@@ -12,7 +12,12 @@ const parse = (input: string): AstNode => {
     throw new Error(`Unexpected lexer error: ${tokens.error.msg}`);
   }
 
-  return new Parser(tokens.value).parse();
+  const ast = new Parser(tokens.value).parse();
+  if (ast.isErr()) {
+    throw new Error(`Unexpected parser error: ${ast.error.message}`);
+  }
+
+  return ast.value;
 };
 
 const validate = (input: string) => new Validator(parse(input)).validate();
@@ -36,6 +41,35 @@ describe("Validator", () => {
     "(test != 3 or fecha == YEAR 4) and fecha : DAY 4",
   ])("accepts a valid expression: %s", (input) => {
     const ast = parse(input);
+    const result = new Validator(ast).validate();
+
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) expect(result.value).toEqual(ast);
+  });
+
+  test("rejects a key used as the root expression", () => {
+    expect(errorsOf("test")).toEqual([
+      {
+        type: "expected operation",
+        message: "test expects a operator",
+        context: { starts: 0, ends: 4 },
+      },
+    ]);
+  });
+
+  test.each(["5", "'text'"])(
+    "accepts a primitive used as the root expression: %s",
+    (input) => {
+      const ast = parse(input);
+      const result = new Validator(ast).validate();
+
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) expect(result.value).toEqual(ast);
+    },
+  );
+
+  test("accepts a modifier used as the root expression", () => {
+    const ast = parse("YEAR 4");
     const result = new Validator(ast).validate();
 
     expect(result.isOk()).toBe(true);
@@ -78,35 +112,6 @@ describe("Validator", () => {
         context: { starts: 0, ends: 7 },
       },
     ]);
-  });
-
-  test("reports missing operands and primitives", () => {
-    expect(errorsOf("test >=")).toEqual([
-      {
-        type: "expected value",
-        message: "expected another operand",
-        context: { starts: 5, ends: 7 },
-      },
-    ]);
-
-    expect(errorsOf("fecha == YEAR")).toEqual([
-      {
-        type: "expected value",
-        message: "expected primitive value",
-        context: { starts: 9, ends: 13 },
-      },
-    ]);
-  });
-
-  test("reports incomplete input while still validating the parsed AST", () => {
-    expect(errorsOf("test >= 2 unknown")).toEqual([
-      {
-        type: "syntax error",
-        message: "Unknown syntax error; check the syntax",
-      },
-    ]);
-
-    expect(errorsOf("5 >= test unknown")).toHaveLength(3);
   });
 
   test("only allows NOT to negate operations or logical expressions", () => {

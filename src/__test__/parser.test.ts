@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { None, Some } from "lrustlike/option";
 import type { AstNode } from "../types/node.js";
 import { Lexer } from "../lexer/index.js";
 import { Token, type TokenOf, type TokenType } from "../types/token.js";
@@ -13,7 +12,7 @@ const token = <T extends TokenType>(
 ): TokenOf<T> =>
   Token(type, starts, ends, value) as TokenOf<T>;
 
-const parse = (input: string): AstNode => {
+const parseResult = (input: string) => {
   const result = new Lexer(input).tokenize();
 
   if (result.isErr()) {
@@ -23,8 +22,20 @@ const parse = (input: string): AstNode => {
   return new Parser(result.value).parse();
 };
 
-const parseTokens = (tokens: ConstructorParameters<typeof Parser>[0]): AstNode =>
+const parse = (input: string): AstNode => {
+  const result = parseResult(input);
+  if (result.isErr()) throw new Error(`Unexpected parser error: ${result.error.message}`);
+  return result.value;
+};
+
+const parseTokens = (tokens: ConstructorParameters<typeof Parser>[0]) =>
   new Parser(tokens).parse();
+
+const parseError = (input: string) => {
+  const result = parseResult(input);
+  if (result.isOk()) throw new Error(`Expected parsing to fail for: ${input}`);
+  return result.error;
+};
 
 describe("Parser", () => {
   test("parses atomic values", () => {
@@ -129,15 +140,10 @@ describe("Parser", () => {
       modifies: { token: token("NUMBER", 5, 9, "2024"), type: "primitive", value: 2024 },
     });
 
-    expect(parse("MONTH name")).toEqual({
-      type: "expected",
-      expected: "complete AST",
-      ast: {
-        token: token("MONTH", 0, 5, "MONTH"),
-        type: "modifier",
-        modifier: "MONTH",
-        modifies: { type: "expected", expected: "primitive" },
-      },
+    expect(parseError("MONTH name")).toEqual({
+      type: "expected value",
+      message: "expected primitive value",
+      context: { starts: 0, ends: 5 },
     });
   });
 
@@ -155,58 +161,35 @@ describe("Parser", () => {
     });
   });
 
-  test("detect incomplete AST", () => {
-    expect(parse("a OR b UNKNOWN c")).toEqual({
-      type: "expected",
-      expected: "complete AST",
-      ast: {
-        token: token("OR", 2, 4, "OR"),
-        type: "logic binary",
-        left: { token: token("KEY", 0, 1, "a"), type: "key", value: "a" },
-        right: { token: token("KEY", 5, 6, "b"), type: "key", value: "b" },
-      }
+  test("reports tokens left after a complete expression", () => {
+    expect(parseError("a OR b UNKNOWN c")).toEqual({
+      type: "syntax error",
+      message: "unexpected token: UNKNOWN",
+      context: { starts: 7, ends: 14 },
     });
   });
 
-  test("informs about missing nodes", () => {
-    expect(parse("(a OR ) AND c")).toEqual({
-      token: token("AND", 8, 11, "AND"),
-      type: "logic binary",
-      left: {
-        token: token("OR", 3, 5, "OR"),
-        type: "logic binary",
-        left: { token: token("KEY", 1, 2, "a"), type: "key", value: "a" },
-        right: { type: "expected", expected: "node" },
-      },
-      right: { token: token("KEY", 12, 13, "c"), type: "key", value: "c" },
-    });
-
-    expect(parse("AND c")).toEqual({
-      token: token("AND", 0, 3, "AND"),
-      type: "logic binary",
-      left: { type: "expected", expected: "node" },
-      right: { token: token("KEY", 4, 5, "c"), type: "key", value: "c" },
-    });
-
-    expect(parse("a AND ")).toEqual({
-      token: token("AND", 2, 5, "AND"),
-      type: "logic binary",
-      left: { token: token("KEY", 0, 1, "a"), type: "key", value: "a" },
-      right: { type: "expected", expected: "node" },
+  test.each([
+    ["(a OR ) AND c", { starts: 3, ends: 5 }],
+    ["AND c", { starts: 0, ends: 3 }],
+    ["a AND ", { starts: 2, ends: 5 }],
+  ])("reports a missing node in %s", (input, context) => {
+    expect(parseError(input)).toEqual({
+      type: "expected value",
+      message: "expected another operand",
+      context,
     });
   });
 
-  test("reports missing and unexpected closing parentheses from token streams", () => {
+  test("reports missing and unexpected closing parentheses", () => {
     expect(parseTokens([
       token("OPEN PAREN", 0, 1, "("),
       token("KEY", 1, 2, "a"),
     ])).toEqual({
-      type: "expected",
-      expected: "complete AST",
-      ast: {
-        type: "expected",
-        expected: "closed paren",
-        found: None(),
+      error: {
+        type: "expected value",
+        message: "expected closing parenthesis",
+        context: { starts: 0, ends: 1 },
       },
     });
 
@@ -216,9 +199,23 @@ describe("Parser", () => {
       token("KEY", 1, 2, "a"),
       unexpected,
     ])).toEqual({
-      type: "expected",
-      expected: "closed paren",
-      found: Some(unexpected),
+      error: {
+        type: "expected value",
+        message: "expected closing parenthesis, but found: 1",
+        context: { starts: 2, ends: 3 },
+      },
+    });
+
+    expect(parseError("a=1)")).toEqual({
+      type: "syntax error",
+      message: "unexpected closing parenthesis",
+      context: { starts: 3, ends: 4 },
+    });
+
+    expect(parseError(")")).toEqual({
+      type: "syntax error",
+      message: "unexpected closing parenthesis",
+      context: { starts: 0, ends: 1 },
     });
   });
 });

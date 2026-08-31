@@ -185,20 +185,16 @@ describe("Lexer", () => {
     });
   });
 
-  test("reports an unclosed opening parenthesis", () => {
-    expect(tokenizeError("a AND (b=2")).toEqual({
-      msg: "Expected closed",
-      starts: 6,
-      ends: 6,
-    });
+  test("tokenizes an unclosed opening parenthesis", () => {
+    expect(tokenTypes("a AND (b=2")).toEqual([
+      "KEY", "AND", "OPEN PAREN", "KEY", "EQUALS", "NUMBER",
+    ]);
   });
 
-  test("reports an unexpected closing parenthesis", () => {
-    expect(tokenizeError("a=1)")).toEqual({
-      msg: "Syntax error",
-      starts: 3,
-      ends: 3,
-    });
+  test("tokenizes an unmatched closing parenthesis", () => {
+    expect(tokenTypes("a=1)")).toEqual([
+      "KEY", "EQUALS", "NUMBER", "CLOSE PAREN",
+    ]);
   });
 
   test("reports unrecognized characters", () => {

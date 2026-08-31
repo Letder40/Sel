@@ -1,4 +1,3 @@
-import { Option } from "lrustlike/option"
 import { LogicOperation, Modifier, Operation, Token } from "./token.js"
 
 export type UnaryLogicOperation = "NOT"
@@ -42,22 +41,4 @@ export type AstNode =
     token: Token & { type: "NUMBER" }
     type: "primitive"
     value: number
-  }
-  | {
-    type: "expected"
-    expected: "complete AST";
-    ast: AstNode
-  }
-  | {
-    type: "expected"
-    expected: "closed paren";
-    found: Option<Token>
-  }
-  | {
-    type: "expected"
-    expected: "primitive";
-  }
-  | {
-    type: "expected"
-    expected: "node";
   }

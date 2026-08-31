@@ -12,7 +12,7 @@ export type LexerError = {
 
 export class Lexer {
   private index: number = 0;
-  private input: string; private bracesStack: Array<number> = new Array()
+  private input: string;
   private tokens: Token[] = new Array()
 
   constructor(input: string) {
@@ -107,7 +107,6 @@ export class Lexer {
   public clear() {
     this.index = 0
     this.tokens = []
-    this.bracesStack = []
   }
 
   public setInput(input: string) {
@@ -137,17 +136,11 @@ export class Lexer {
       }
 
       if (this.peek() === '(') {
-        this.bracesStack.push(this.index);
         this.pushToken("OPEN PAREN", 1)
         continue;
       }
       else if (this.peek() === ')') {
-        if (this.bracesStack.length === 0) {
-          return Err(this.error("SYNTAX", this.index, this.index))
-        }
-
         this.pushToken("CLOSE PAREN", 1)
-        this.bracesStack.pop();
         continue;
       }
       else if (this.peek() === "'" || this.peek() === '"') {
@@ -172,11 +165,6 @@ export class Lexer {
       else {
         return Err(this.error("SYNTAX", this.index, this.index))
       }
-    }
-
-    if (this.bracesStack.length !== 0) {
-      const expectedClosed = this.bracesStack[this.bracesStack.length - 1];
-      return Err(this.error("UNCLOSED", expectedClosed, expectedClosed))
     }
 
     return Ok(this.tokens);
